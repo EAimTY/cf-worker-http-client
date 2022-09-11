@@ -2,9 +2,9 @@
 name = "cf-worker-http-client"
 version = "0.1.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
-description = "Minimal HTTP client for Cloudflare Worker, in Rust"
+description = "Minimal HTTP client for Cloudflare Workers, in Rust"
 categories = ["web-programming::http-client", "wasm"]
-keywords = ["http", "wasm", "cloudflare", "worker"]
+keywords = ["http", "wasm", "cloudflare", "workers"]
 edition = "2021"
 rust-version = "1.63"
 readme = "README.md"
