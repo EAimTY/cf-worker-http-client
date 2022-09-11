@@ -35,6 +35,10 @@ impl<M> Request<M> {
         }
     }
 
+    pub fn url(&self) -> &Url {
+        &self.url
+    }
+
     pub fn headers(&mut self) -> &mut Headers {
         &mut self.headers
     }
@@ -53,7 +57,7 @@ impl<M> Request<M> {
             } else if let Some(redir_url) = resp
                 .headers()
                 .get("Location")?
-                .and_then(|location| Url::parse(&location).ok())
+                .and_then(|location| url.join(&location).ok())
             {
                 if let Some(cookies) = resp.headers().get("Set-Cookie")? {
                     self.agent.store_response_cookies(&redir_url, &cookies);
