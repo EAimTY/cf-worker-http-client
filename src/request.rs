@@ -1,7 +1,4 @@
-use crate::{util, Response};
-use cookie_store::CookieStore;
-use parking_lot::Mutex;
-use std::{fmt::Write, sync::Arc};
+use crate::{Agent, Response};
 use url::{form_urlencoded::Serializer, Url};
 use worker::{
     wasm_bindgen::JsValue,
@@ -9,43 +6,31 @@ use worker::{
         Request as EdgeRequest, RequestInit as EdgeRequestInit,
         RequestRedirect as EdgeRequestRedirect,
     },
-    Error, Fetch, Headers, Method, Request as WorkerRequest, RequestRedirect,
+    Error, Fetch, Headers, Method, Request as WorkerRequest, Response as WorkerResponse,
 };
 
 pub struct Get;
 pub struct Post;
 
 pub struct Request<M> {
+    agent: Agent,
     url: Url,
     method: Method,
     headers: Headers,
-    redirect: RequestRedirect,
-    cookie_store: Arc<Mutex<CookieStore>>,
     _marker: M,
 }
 
 impl<M> Request<M> {
-    pub(crate) fn new(
-        url: Url,
-        method: Method,
-        cookie_store: Arc<Mutex<CookieStore>>,
-        _marker: M,
-    ) -> Self {
+    pub(crate) fn new(agent: Agent, url: Url, method: Method, _marker: M) -> Self {
         let mut headers = Headers::new();
-        let mut cookies = String::new();
-
-        for (name, value) in cookie_store.lock().get_request_values(&url) {
-            write!(&mut cookies, "{name}={value}; ").unwrap();
-        }
-
+        let cookies = agent.get_request_cookies(&url);
         headers.set("Cookie", &cookies).unwrap();
 
         Self {
+            agent,
             url,
             method,
             headers,
-            redirect: RequestRedirect::Follow,
-            cookie_store,
             _marker,
         }
     }
@@ -55,21 +40,45 @@ impl<M> Request<M> {
     }
 
     async fn do_call(self, body: Option<&JsValue>) -> Result<Response, Error> {
+        let mut resp = self.get_response_inner(body).await?;
+
+        loop {
+            if resp.status_code() != 301 && resp.status_code() != 302 {
+                if let Some(cookies) = resp.headers().get("Set-Cookie")? {
+                    self.agent.store_response_cookies(&self.url, &cookies);
+                }
+
+                break Ok(Response::new(resp));
+            } else if let Some(redir_url) = resp
+                .headers()
+                .get("Location")?
+                .and_then(|location| Url::parse(&location).ok())
+            {
+                if let Some(cookies) = resp.headers().get("Set-Cookie")? {
+                    self.agent.store_response_cookies(&redir_url, &cookies);
+                }
+
+                resp = self.agent.get(redir_url).get_response_inner(None).await?;
+            } else {
+                if let Some(cookies) = resp.headers().get("Set-Cookie")? {
+                    self.agent.store_response_cookies(&self.url, &cookies);
+                }
+
+                break Ok(Response::new(resp));
+            }
+        }
+    }
+
+    async fn get_response_inner(&self, body: Option<&JsValue>) -> Result<WorkerResponse, Error> {
         let mut init = EdgeRequestInit::new();
 
         init.method(self.method.as_ref())
             .headers(&self.headers.0)
-            .redirect(EdgeRequestRedirect::from(self.redirect))
+            .redirect(EdgeRequestRedirect::Manual)
             .body(body);
 
         let req = EdgeRequest::new_with_str_and_init(self.url.as_str(), &init)?;
-        let resp = Fetch::Request(WorkerRequest::from(req)).send().await?;
-
-        if let Some(cookies) = resp.headers().get("Set-Cookie")? {
-            util::add_response_cookies(&mut self.cookie_store.lock(), &cookies, &self.url);
-        }
-
-        Ok(Response::new(resp))
+        Fetch::Request(WorkerRequest::from(req)).send().await
     }
 }
 
