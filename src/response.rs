@@ -1,12 +1,18 @@
+use url::Url;
 use worker::{Error, Headers, Response as WorkerResponse};
 
 pub struct Response {
     inner: WorkerResponse,
+    url: Url,
 }
 
 impl Response {
-    pub(crate) fn new(resp: WorkerResponse) -> Self {
-        Self { inner: resp }
+    pub(crate) fn new(resp: WorkerResponse, url: Url) -> Self {
+        Self { inner: resp, url }
+    }
+
+    pub fn url(&self) -> &Url {
+        &self.url
     }
 
     pub fn headers(&self) -> &Headers {

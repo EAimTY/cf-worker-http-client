@@ -41,14 +41,15 @@ impl<M> Request<M> {
 
     async fn do_call(self, body: Option<&JsValue>) -> Result<Response, Error> {
         let mut resp = self.get_response_inner(body).await?;
+        let mut url = self.url;
 
         loop {
             if resp.status_code() != 301 && resp.status_code() != 302 {
                 if let Some(cookies) = resp.headers().get("Set-Cookie")? {
-                    self.agent.store_response_cookies(&self.url, &cookies);
+                    self.agent.store_response_cookies(&url, &cookies);
                 }
 
-                break Ok(Response::new(resp));
+                break Ok(Response::new(resp, url));
             } else if let Some(redir_url) = resp
                 .headers()
                 .get("Location")?
@@ -58,13 +59,15 @@ impl<M> Request<M> {
                     self.agent.store_response_cookies(&redir_url, &cookies);
                 }
 
-                resp = self.agent.get(redir_url).get_response_inner(None).await?;
+                let req = self.agent.get(redir_url);
+                resp = req.get_response_inner(None).await?;
+                url = req.url;
             } else {
                 if let Some(cookies) = resp.headers().get("Set-Cookie")? {
-                    self.agent.store_response_cookies(&self.url, &cookies);
+                    self.agent.store_response_cookies(&url, &cookies);
                 }
 
-                break Ok(Response::new(resp));
+                break Ok(Response::new(resp, url));
             }
         }
     }
