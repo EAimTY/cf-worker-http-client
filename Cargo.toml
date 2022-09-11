@@ -1,7 +1,15 @@
 [package]
 name = "cf-worker-http-client"
 version = "0.1.0"
+authors = ["EAimTY <ea.imty@gmail.com>"]
+description = "Minimal HTTP client for Cloudflare Worker, in Rust"
+categories = ["web-programming::http-client", "wasm"]
+keywords = ["http", "wasm", "cloudflare", "worker"]
 edition = "2021"
+rust-version = "1.63"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/EAimTY/cf-worker-http-client"
 
 [dependencies]
 cookie = { version = "0.16.*", default-features = false }
