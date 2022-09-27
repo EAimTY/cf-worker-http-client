@@ -13,7 +13,7 @@ repository = "https://github.com/EAimTY/cf-worker-http-client"
 
 [dependencies]
 cookie = { version = "0.16.*", default-features = false }
-cookie_store = { git = "https://github.com/EAimTY/cookie_store", default-features = false, features = ["wasm-bindgen"] }
+cookie_store = { git = "https://github.com/pfernie/cookie_store", default-features = false, features = ["wasm-bindgen"] }
 parking_lot = { version = "0.12.*", default-features = false }
 url = { version = "2.2.*", default-features = false }
 worker = { version = "0.0.*", default-features = false }
