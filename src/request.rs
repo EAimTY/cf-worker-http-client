@@ -53,7 +53,7 @@ impl<M> Request<M> {
                     self.agent.store_response_cookies(&url, &cookies);
                 }
 
-                break Ok(Response::new(resp, url));
+                return Ok(Response::new(resp, url));
             } else if let Some(redir_url) = resp
                 .headers()
                 .get("Location")?
@@ -71,7 +71,7 @@ impl<M> Request<M> {
                     self.agent.store_response_cookies(&url, &cookies);
                 }
 
-                break Ok(Response::new(resp, url));
+                return Ok(Response::new(resp, url));
             }
         }
     }

@@ -12,8 +12,8 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/EAimTY/cf-worker-http-client"
 
 [dependencies]
-cookie = { version = "0.16.*", default-features = false }
-cookie_store = { git = "https://github.com/pfernie/cookie_store", default-features = false, features = ["wasm-bindgen"] }
-parking_lot = { version = "0.12.*", default-features = false }
-url = { version = "2.2.*", default-features = false }
-worker = { version = "0.0.*", default-features = false }
+cookie = { version = "0.16.1", default-features = false }
+cookie_store = { version = "0.18.0", default-features = false, features = ["wasm-bindgen"] }
+parking_lot = { version = "0.12.1", default-features = false }
+url = { version = "2.3.1", default-features = false }
+worker = { version = "0.0.11", default-features = false }
